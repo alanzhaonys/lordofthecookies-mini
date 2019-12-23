@@ -9,11 +9,11 @@
 #include <Adafruit_NeoMatrix.h>
 #include <Adafruit_NeoPixel.h>
 #ifndef PSTR
-  #define PSTR // Make Arduino Due happy
+#define PSTR // Make Arduino Due happy
 #endif
 
 #define DATA_PIN 8
-#define TRIGGER_PIN A1
+#define TRIGGER_PIN 9
 #define POT_PIN A0
 #define BRIGHTNESS 5
 #define WIDTH 8
@@ -43,16 +43,11 @@ Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(WIDTH, HEIGHT, DATA_PIN,
                             NEO_MATRIX_COLUMNS + NEO_MATRIX_PROGRESSIVE,
                             NEO_GRB            + NEO_KHZ800);
 
-const uint16_t colors[] = {
-  matrix.Color(255, 0, 0), matrix.Color(0, 255, 0), matrix.Color(0, 0, 255)
-};
-
 void setup() {
   // Matrix setup
   matrix.begin();
   matrix.setTextWrap(false);
-  matrix.setBrightness(8);
-  matrix.setTextColor(colors[0]);
+  //matrix.setBrightness(8);
 
   // Trigger pin setup
   pinMode(TRIGGER_PIN, INPUT_PULLUP);
@@ -62,7 +57,7 @@ void setup() {
 
   // Starting
   Serial.begin(9600);
-  Serial.println("Starting now...");
+  //Serial.println("Starting now...");
 }
 
 int x = matrix.width();
@@ -80,6 +75,9 @@ const int heart[] = {       // Heart bitmap
 };
 
 void scrollText(int brightness) {
+
+ uint32_t color = matrix.Color(random(255), random(255), random(255));
+  
   matrix.setBrightness(brightness);
   matrix.fillScreen(0);
   matrix.setCursor(x, 0);
@@ -87,27 +85,52 @@ void scrollText(int brightness) {
   if (--x < -60) {
     x = matrix.width();
     if (++pass >= 3) pass = 0;
-    matrix.setTextColor(colors[pass]);
+    matrix.setTextColor(color);
   }
   matrix.show();
   delay(100);
 }
 
+void drawHeart(int brightness, uint32_t color) {
+  matrix.setBrightness(brightness);
+  matrix.clear();
+  for (int j = 0; j < 64; j++) {
+    matrix.drawPixel(j % 8, j / 8, color*heart[j]);
+  }
+  matrix.show();
+}
+
+void heartPulse(int count, int brightness) {
+   uint32_t color = matrix.Color(random(255), random(255), random(255));
+  for (int i = 0; i < count; i++) {
+    drawHeart(setBrightness(brightness + brightness * 0.2), color);
+    delay(500);
+    drawHeart(setBrightness(brightness - brightness * 0.2), color);
+    delay(300);
+    drawHeart(brightness, color);
+  }
+}
+
+int setBrightness(int brightness) {
+  if (brightness > 255) {
+    brightness = 255;
+  } else if (brightness <= 0) {
+    brightness = 2;
+  }
+  return brightness;
+}
+
 void loop() {
 
   float potReading = analogRead(POT_PIN);
-  //float brightness = (potReading / 1024.0) * 255;
   float brightness = map(potReading, 0, 1023, 0, 255);
   if (brightness == 0) {
-    brightness = 1;
+    brightness = 2;
   }
-
-  //Serial.println(brightness);
-
-  //Serial.println(digitalRead(triggerPin));
+  
   if (digitalRead(TRIGGER_PIN) == LOW) {
     scrollText(brightness);
   } else {
-    Serial.println("Flashing LED...");
+    heartPulse(10, brightness);
   }
 }

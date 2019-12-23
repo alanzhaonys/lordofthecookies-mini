@@ -205,6 +205,9 @@ void setup() {
   // Initialize LED trigger pin
   pinMode(ledTriggerPin, OUTPUT);
 
+  // Stop LED
+  //digitalWrite(ledTriggerPin, LOW);
+
   // Initialize buzzer pin
   pinMode(buzzer, OUTPUT);
 
@@ -226,9 +229,14 @@ void loop() {
   while (dispensePinPressed() == pressed) {
     // Flash LED
     digitalWrite(ledTriggerPin, HIGH);
+
+    // Move actuator forward
     moveActuatorForward();
     delay(2000);
+
+    // Move actuator backward
     moveActuatorBackward();
+    
     // Stop LED
     digitalWrite(ledTriggerPin, LOW);
   }
